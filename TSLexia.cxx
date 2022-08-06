@@ -58,6 +58,8 @@ const std::vector<std::pair<std::string, int>> defaultStyles = {
   {"type", TSLEXIA_TYPE},
   {"variable", TSLEXIA_VARIABLE},
   {"comment", TSLEXIA_COMMENT},
+  {"variable.builtin", TSLEXIA_VARIABLE},
+  {"error", TSLEXIA_ERROR},
 };
 } // namespace
 
@@ -157,6 +159,10 @@ TSLexia::TSLexia(const char *paths) : DefaultLexer("tree-sitter", 0) {
     if (!lib) {
       errmsg = "Cannot open parser: ";
       errmsg += path;
+#if !_WIN32
+      errmsg += ": ";
+      errmsg += dlerror();
+#endif
       PropertySet(LexerErrorKey, errmsg.c_str());
       return;
     }
@@ -220,6 +226,7 @@ void SCI_METHOD TSLexia::Lex(
   for (size_t i = 0; i < languages.size(); i++) {
     const auto &parser = parsers[i];
     const auto &query = queries[i];
+    if (!query) continue;
 
     const TSTree *tree =
       ts_parser_parse_string(parser.get(), nullptr, buffer->BufferPointer(), buffer->Length());
